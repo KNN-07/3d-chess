@@ -1,21 +1,26 @@
 import { Chess } from './vendor/chess.js';
 import { ChessScene } from './scene.js';
 import { Companion } from './companion.js';
+import { StockfishClient } from './stockfish-client.js';
+import { createStockfishWorker } from './stockfish-worker.js';
+import { STRENGTH_PRESETS, DEFAULT_STRENGTH, restoreStrength, getStrength } from './strength.js';
 
 const $=id=>document.getElementById(id);
 const game=new Chess();
 const companion=new Companion();
+const engine=new StockfishClient({workerFactory:createStockfishWorker});
 const STORAGE='wooden-table-chess-v1';
 const names={p:'Pawn',n:'Knight',b:'Bishop',r:'Rook',q:'Queen',k:'King'};
-let mode='ai',level=2,selected=null,thinking=false,hinting=false,moving=false,visualGeneration=0,pendingPromotion=null,worker=null,job=0,sound=false,topView=false,engineFailed=false,nextMode=null,scene=null,audio=null;
+let mode='ai',strength=DEFAULT_STRENGTH,selected=null,thinking=false,hinting=false,moving=false,visualGeneration=0,pendingPromotion=null,job=0,sound=false,topView=false,engineFailed=false,nextMode=null,scene=null,audio=null;
 let toastTimer;
-try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'null');if(saved){if(saved.pgn)game.loadPgn(saved.pgn);mode=saved.mode==='local'?'local':'ai';level=[1,2,3].includes(saved.level)?saved.level:2;sound=!!saved.sound;}}catch{game.reset();}
+try{const saved=JSON.parse(localStorage.getItem(STORAGE)||'null');if(saved){if(saved.pgn)game.loadPgn(saved.pgn);mode=saved.mode==='local'?'local':'ai';strength=restoreStrength(saved);sound=!!saved.sound;}}catch{game.reset();}
+$('difficulty').replaceChildren(...STRENGTH_PRESETS.map(preset=>new Option(preset.label,preset.id)));
 
-function save(){game.setHeader('Event','Casual game');game.setHeader('Site','The Wooden Table');game.setHeader('White','White');game.setHeader('Black',mode==='ai'?'Jimmy':'Black');game.setHeader('Result',game.isCheckmate()?(game.turn()==='w'?'0-1':'1-0'):game.isDraw()?'1/2-1/2':'*');try{localStorage.setItem(STORAGE,JSON.stringify({pgn:game.pgn(),mode,level,sound}));}catch{/* Private browsing may not permit storage. */}}
+function save(){game.setHeader('Event','Casual game');game.setHeader('Site','The Wooden Table');game.setHeader('White','White');game.setHeader('Black',mode==='ai'?'Stockfish 19':'Black');if(mode==='ai'&&getStrength(strength).elo!==null)game.setHeader('BlackElo',String(getStrength(strength).elo));else game.removeHeader('BlackElo');game.setHeader('Result',game.isCheckmate()?(game.turn()==='w'?'0-1':'1-0'):game.isDraw()?'1/2-1/2':'*');try{localStorage.setItem(STORAGE,JSON.stringify({pgn:game.pgn(),mode,strength,sound}));}catch{/* Private browsing may not permit storage. */}}
 function toast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,3800);}
 function playSound(capture=false){if(!sound)return;try{audio ||= new (window.AudioContext||window.webkitAudioContext)();audio.resume();const oscillator=audio.createOscillator(),gain=audio.createGain();oscillator.connect(gain);gain.connect(audio.destination);oscillator.type='sine';oscillator.frequency.setValueAtTime(capture?320:520,audio.currentTime);oscillator.frequency.exponentialRampToValueAtTime(160,audio.currentTime+.075);gain.gain.setValueAtTime(.12,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.13);oscillator.start();oscillator.stop(audio.currentTime+.14);}catch{}}
 function humanTurn(){return !thinking&&!moving&&!game.isGameOver()&&(mode==='local'||game.turn()==='w');}
-function cancelJob(){job++;worker?.terminate();worker=null;thinking=false;hinting=false;}
+function cancelJob(){job++;engine.cancel();thinking=false;hinting=false;}
 function cancelVisual(){visualGeneration++;moving=false;scene?.cancelMove?.();}
 function endMessage(){if(game.isCheckmate())return `Checkmate · ${game.turn()==='w'?'Black':'White'} wins`;if(game.isStalemate())return 'Draw · Stalemate';if(game.isThreefoldRepetition())return 'Draw · Threefold repetition';if(game.isInsufficientMaterial())return 'Draw · Insufficient material';if(game.isDrawByFiftyMoves())return 'Draw · Fifty-move rule';if(game.isDraw())return 'Draw';return null;}
 function highlight(){if(!scene)return;const history=game.history({verbose:true});const previous=history.at(-1);const legal=selected?game.moves({square:selected,verbose:true}).map(m=>m.to):[];let check=null;if(game.isCheck())check=game.board().flat().find(p=>p?.type==='k'&&p.color===game.turn())?.square;scene.setHighlights({selected,legal,lastMove:previous?{from:previous.from,to:previous.to}:null,check});}
@@ -30,10 +35,11 @@ function render(positionChanged=false){
   $('mood').textContent=thinking||hinting?'✧':end?'✦':game.isCheck()?'!':'✦';
   $('speech').classList.toggle('thinking',thinking||hinting);
   companion.react(end?'end':game.isCheck()?'check':moving?'move':thinking||hinting?'thinking':'idle');
-  $('opponent-name').textContent=mode==='ai'?'Jimmy':'Two players';
-  $('opponent-level').textContent=mode==='ai'?`(${['','Casual','Club','Advanced'][level]})`:'(Local)';
+  $('opponent-name').textContent=mode==='ai'?'Stockfish':'Two players';
+  $('opponent-level').textContent=mode==='ai'?`(${getStrength(strength).label})`:'(Local)';
   $('player-info').textContent=mode==='ai'?'You play as White':'Pass-and-play on this device';
-  $('difficulty').value=String(level);$('difficulty').disabled=mode==='local';
+  $('difficulty').value=strength;$('difficulty').disabled=mode==='local';
+  $('engine-status').textContent=mode==='local'?'Play together on this device':engineFailed?'Stockfish interrupted · tap the lightbulb to retry':thinking?'Stockfish is thinking…':hinting?'Stockfish is finding a hint…':'Stockfish 19 · Runs on this device';
   document.querySelectorAll('[data-mode]').forEach(b=>{b.classList.toggle('active',b.dataset.mode===mode);b.setAttribute('aria-pressed',b.dataset.mode===mode);});
   $('undo-button').disabled=!history.length||!!pendingPromotion;
   $('export-button').disabled=!history.length;
@@ -74,8 +80,16 @@ function selectSquare(square){
 }
 function requestEngine(kind){
   cancelJob();engineFailed=false;const id=job;const fen=game.fen();thinking=kind==='move';hinting=kind==='hint';render();
-  const fail=()=>{if(id!==job)return;cancelJob();engineFailed=kind==='move';render();toast(kind==='move'?'Computer interrupted. Tap the lightbulb to retry.':'Hint unavailable. You can try again.');};
-  try{worker=new Worker('./engine-worker.js',{type:'module'});worker.onmessage=({data})=>{if(data.id!==job||fen!==game.fen())return;if(data.error||!data.move){fail();return;}const legal=game.moves({verbose:true}).find(m=>m.from===data.move.from&&m.to===data.move.to&&(!data.move.promotion||m.promotion===data.move.promotion));if(!legal){fail();return;}cancelJob();if(kind==='move'){execute(data.move);}else{selected=legal.from;render();scene?.setHighlights({selected:legal.from,legal:[legal.to],lastMove:null,check:null});toast(`Try ${legal.san} · ${legal.from} → ${legal.to}`);}};worker.onerror=fail;worker.postMessage({id,fen,level:kind==='hint'?3:level});}catch{fail();}
+  const fail=error=>{if(id!==job||error?.name==='AbortError')return;cancelJob();engineFailed=kind==='move';render();toast(kind==='move'?'Stockfish interrupted. Tap the lightbulb to retry.':'Stockfish hint unavailable. You can try again.');};
+  const history=game.history({verbose:true});
+  try{engine.search({fen,startFen:history[0]?.before||fen,moves:history.map(move=>move.from+move.to+(move.promotion||'')),elo:kind==='hint'?null:getStrength(strength).elo,movetime:kind==='hint'||strength==='full'?2000:1500}).then(data=>{
+    if(id!==job||fen!==game.fen())return;
+    const legal=data?.move&&game.moves({verbose:true}).find(move=>move.from===data.move.from&&move.to===data.move.to&&(move.promotion||'')===(data.move.promotion||''));
+    if(!legal){fail(new Error('Stockfish returned an illegal move.'));return;}
+    cancelJob();
+    if(kind==='move'){execute({from:legal.from,to:legal.to,...(legal.promotion?{promotion:legal.promotion}:{})});}
+    else{selected=legal.from;render();scene?.setHighlights({selected:legal.from,legal:[legal.to],lastMove:null,check:null});toast(`Stockfish suggests ${legal.san} · ${legal.from} → ${legal.to}`);}
+  }).catch(fail);}catch(error){fail(error);}
 }
 function scheduleComputer(){if(!moving&&mode==='ai'&&game.turn()==='b'&&!game.isGameOver())requestEngine('move');}
 function newGame(requestedMode=mode){nextMode=requestedMode;if(game.history().length){$('new-game-dialog').returnValue='';$('new-game-dialog').showModal();}else startGame();}
@@ -87,7 +101,7 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('menu').
 $('restart-button').onclick=()=>newGame();$('new-game-menu').onclick=()=>newGame();
 $('new-game-dialog').addEventListener('close',()=>{if($('new-game-dialog').returnValue==='start')startGame();else nextMode=null;});
 document.querySelectorAll('[data-mode]').forEach(button=>button.onclick=()=>{if(button.dataset.mode!==mode)newGame(button.dataset.mode);});
-$('difficulty').onchange=()=>{level=Number($('difficulty').value);save();if(mode==='ai'&&game.turn()==='b'&&!game.isGameOver())scheduleComputer();else render();};
+$('difficulty').onchange=()=>{strength=getStrength($('difficulty').value).id;cancelJob();engineFailed=false;save();render();scheduleComputer();};
 $('undo-button').onclick=()=>{cancelJob();cancelVisual();engineFailed=false;selected=null;if(mode==='ai'&&game.turn()==='w'){game.undo();game.undo();}else game.undo();render(true);save();toast('Move taken back');};
 $('hint-button').onclick=()=>{if(engineFailed)scheduleComputer();else if(humanTurn())requestEngine('hint');};
 $('zoom-in').onclick=()=>scene?.zoom(-1);$('zoom-out').onclick=()=>scene?.zoom(1);

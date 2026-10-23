@@ -14,11 +14,21 @@ To run the editable source, with Node.js installed, double-click `START.cmd` on 
 
 - Select a piece, then a highlighted destination. Drag to rotate and scroll to zoom.
 - A 3D human hand reaches in, lifts the piece, and places it on the destination for both players. Undo and restart can interrupt the movement safely; reduced-motion preferences are respected.
-- The menu offers computer or local two-player games, three computer difficulty levels, move history, notation entry, and PGN export.
+- The menu offers Stockfish or local two-player games, Elo strength presets, move history, notation entry, and PGN export.
 - The right controls provide undo, a suggested move, and zoom. Lower-right controls flip the board, switch camera views, and enable sound.
 - Castling, en passant, all four promotion choices, checkmate, stalemate, repetition, insufficient material, and the fifty-move draw rule are handled by chess.js. Available draws end the game automatically.
 - Games are saved in this browser's local storage. Against the computer, you play White. Two-player mode is local pass-and-play; there is no online matchmaking.
-- The computer is a lightweight, time-bounded search engine for casual play, not Stockfish or a rated opponent.
+- The computer and hints use Stockfish 19 Lite WASM, running locally in a separate Web Worker. No chess service, account, or network connection is required.
+
+## Stockfish and Elo presets
+
+Choose **Game menu → Opponent strength**: **1320, 1500, 1700, 1900, 2100, 2400, 2800, 3190 Elo**, or **Full strength**. The default is 1500. Your choice is saved, shown beside the companion, and included as `BlackElo` in PGN exports when a target is selected. Full strength and local two-player games omit that tag.
+
+These are Stockfish's native `UCI_LimitStrength` / `UCI_Elo` targets, within the exact 1320–3190 range advertised by the bundled build. They are approximate playing-strength targets, not measured FIDE or online ratings. Hardware, search time, and the smaller neural network affect playing strength. Limited presets use 1.5 seconds per move; full strength and hints use 2 seconds. Full strength disables the Elo limiter, while retaining the search-time limit. Hints always use full strength independently of the selected opponent preset.
+
+Changing strength during a search cancels it and restarts with the new target. Undo, restart, and playing a move cancel stale hints/searches safely. Full move history is supplied to the engine so it can recognize repetitions. The 3D hand finishes placing a piece before the computer starts thinking. Older Casual/Club/Advanced saves migrate to 1320/1500/2100 while preserving the game.
+
+The pinned **Stockfish.js 19.0.1 lite single-thread build** includes its neural network and needs no cross-origin isolation headers. Both the served game and standalone HTML contain the same engine; the standalone embeds the JS and WASM so it needs no CDN. See [Stockfish source, licensing, and reproduction details](docs/stockfish-source.md). The original minimax engine has been replaced.
 
 ## Custom Live2D companion
 
@@ -38,10 +48,10 @@ Core and models retain their own licenses. Use models you have permission to use
 
 ## Source
 
-`dist/` contains the deployable static game. `scene.js` builds the 3D scene, `app.js` manages the interface/game session, and `ai.js` runs the computer search through `engine-worker.js`. `server.mjs` is a small local HTTP server. Run `npm test` for the chess and computer checks.
+`dist/` contains the deployable static game. `scene.js` builds the 3D scene, `app.js` manages the interface/game session, `stockfish-client.js` manages the UCI protocol, and `stockfish-worker.js` starts the engine in either edition. `strength.js` defines the presets and saved-setting migration. `server.mjs` is a small local HTTP server with WASM MIME support. Run `npm test` for chess rules, engine protocol, application cancellation, and companion checks.
 
 For development and tests, use Node.js 22.15+ (Node.js 24 recommended). To rebuild the standalone edition, run `npm ci` and then `npm run build`. This writes the root `3D-Chess.html` with the renderers, worker, rules, styles, and artwork embedded. Running `node bundle.mjs` without an output argument writes `dist/standalone.html` for local preview instead.
 
 `dist/companion.js` manages the optional companion UI; `model-package.js` validates and resolves local assets; `companion-storage.js` handles IndexedDB. `src/live2d-runtime.js` is built into `dist/vendor/live2d-renderer.js` by `bundle.mjs` and loaded only after Core is supplied. The build also embeds it into the standalone HTML. No proprietary Core or sample models are included in either build.
 
-Third-party libraries: Three.js 0.180.0 (MIT), chess.js 1.4.0 (BSD-2-Clause), PixiJS 6.5.10 (MIT), and pixi-live2d-display 0.4.0 (MIT, with Cubism framework code under separate Live2D terms). Full notices are in `dist/vendor/` and embedded in the standalone HTML. The unused `gh-pages` dependency of the Live2D plugin is overridden to 6.1.1 to avoid known vulnerable transitive versions; no deployment tooling is used by the game.
+Third-party libraries: Three.js 0.180.0 (MIT), chess.js 1.4.0 (BSD-2-Clause), PixiJS 6.5.10 (MIT), pixi-live2d-display 0.4.0 (MIT, with Cubism framework code under separate Live2D terms), and Stockfish.js 19.0.1 (GPLv3). Full notices are in `dist/vendor/` and embedded in the standalone HTML. Stockfish runs as a separate worker using UCI; its corresponding source and build information are provided alongside the engine. The unused `gh-pages` dependency of the Live2D plugin is overridden to 6.1.1 to avoid known vulnerable transitive versions; no deployment tooling is used by the game.

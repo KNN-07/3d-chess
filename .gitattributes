@@ -2,5 +2,13 @@
 *.cmd text eol=crlf
 *.png binary
 *.jpg binary
+*.wasm binary
+*.nnue binary
+*.tgz binary
 dist/vendor/* linguist-vendored -whitespace
+dist/vendor/stockfish/** linguist-vendored -whitespace
+dist/vendor/stockfish/stockfish-19-lite-single.js -text
+dist/vendor/stockfish/COPYING.txt -text
+dist/vendor/stockfish/AUTHORS -text
+third_party/stockfish/** linguist-vendored -whitespace
 3D-Chess.html linguist-generated -whitespace

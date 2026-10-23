@@ -10,3 +10,5 @@ dist/standalone.html
 # User-supplied proprietary runtime and models must remain local.
 **/live2dcubismcore*.js
 dist/models/
+# Local extraction scratch; the complete upstream source archive is tracked.
+third_party/stockfish/upstream/

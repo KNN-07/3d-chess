@@ -9,3 +9,6 @@
 .companion.has-live2d{width:calc(var(--companion-size,240px) * .8);max-width:35vw}
 .live2d-staging{position:fixed;left:-1000px;top:0;width:240px;height:300px;pointer-events:none}
 @media(max-width:700px){#live2d-stage{height:min(var(--companion-size,240px),28vh)}.companion.has-live2d{width:min(calc(var(--companion-size,240px) * .8),26vw)}}
+.engine-status{font-size:11px;color:#b9cea0;margin-top:12px;line-height:1.5}.strength-note{font-size:10px;color:var(--muted);line-height:1.5;margin-top:4px}
+.engine-credit{display:inline-block;margin-top:10px;font:10px 'Segoe UI',Arial,sans-serif;color:var(--muted);text-underline-offset:3px}
+@media(max-width:700px){.companion .nameplate{max-width:100%;flex-wrap:wrap;justify-content:center;row-gap:2px}.companion #opponent-level{flex-basis:100%;text-align:center}}

@@ -1,0 +1,48 @@
+{
+  "package": "stockfish",
+  "packageVersion": "19.0.1",
+  "engine": "Stockfish 19 Lite WASM",
+  "flavor": "lite-single",
+  "upstreamRepository": "https://github.com/nmrugg/stockfish.js",
+  "upstreamTag": "v19.0.1",
+  "upstreamCommit": "0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6",
+  "license": "GPL-3.0",
+  "modifiedEngineFiles": false,
+  "requiresCrossOriginIsolation": false,
+  "uciElo": { "default": 1320, "min": 1320, "max": 3190 },
+  "threads": { "default": 1, "min": 1, "max": 1 },
+  "evalFile": "nn-61e7af4bb97d.nnue",
+  "buildTools": { "emscripten": "6.0.9", "terser": "5.51.2" },
+  "artifacts": [
+    {
+      "path": "dist/vendor/stockfish/stockfish-19-lite-single.js",
+      "url": "https://github.com/nmrugg/stockfish.js/releases/download/v19.0.1/stockfish-19-lite-single.js",
+      "sha256": "ccb130d7ff29408531c47d859a49f91d59d4f482d05a53eb1a3231a4f624c91a"
+    },
+    {
+      "path": "dist/vendor/stockfish/stockfish-19-lite-single.wasm",
+      "url": "https://github.com/nmrugg/stockfish.js/releases/download/v19.0.1/stockfish-19-lite-single.wasm",
+      "sha256": "ee4f115bdb2d32cadf96cada104a05b5ec257d7ad6f57582190b49bc71f096de"
+    },
+    {
+      "path": "dist/vendor/stockfish/COPYING.txt",
+      "url": "https://raw.githubusercontent.com/nmrugg/stockfish.js/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6/Copying.txt",
+      "sha256": "0b383d5a63da644f628d99c33976ea6487ed89aaa59f0b3257992deac1171e6b"
+    },
+    {
+      "path": "dist/vendor/stockfish/AUTHORS",
+      "url": "https://raw.githubusercontent.com/nmrugg/stockfish.js/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6/AUTHORS",
+      "sha256": "f81e7d74c350626766382ec67fa262c38cda00cb8b501790f95cdebb526006c1"
+    },
+    {
+      "path": "third_party/stockfish/stockfishjs-19.0.1-source.tgz",
+      "url": "https://codeload.github.com/nmrugg/stockfish.js/tar.gz/0d5dd7944f88c817c07a26bc4fb1905d5f9c46d6",
+      "sha256": "e5289a920554bf0069a6601c228e81d957c00522bb31c4343588dc5d7d251879"
+    },
+    {
+      "path": "third_party/stockfish/networks/nn-61e7af4bb97d.nnue",
+      "url": "https://tests.stockfishchess.org/api/nn/nn-61e7af4bb97d.nnue",
+      "sha256": "61e7af4bb97d51eeeb25d322916f86513b5cd3a827ce189c98c6e31946f99e5b"
+    }
+  ]
+}
