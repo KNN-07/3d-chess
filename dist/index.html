@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#30251c">
+  <meta name="description" content="Play a beautiful 3D chess game on a wooden board, against the computer or a friend.">
+  <title>3D Chess — The Wooden Table</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23302720'/%3E%3Ctext x='32' y='49' text-anchor='middle' font-size='49' fill='%23ead9b7'%3E♞%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+  <main id="table" aria-label="3D chess game">
+    <div id="scene" aria-label="Interactive 3D chessboard. Select a piece, then a highlighted square. Drag to orbit, scroll to zoom."></div>
+    <div id="loading"><span class="loading-piece">♞</span><span>Setting the table…</span></div>
+    <div class="tools tools-left" aria-label="Game controls">
+      <button class="icon-button" id="menu-button" aria-label="Open game menu" aria-expanded="false" title="Game menu"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg></button>
+      <button class="icon-button" id="restart-button" aria-label="New game" title="New game"><svg viewBox="0 0 24 24"><path d="M12 3v5l4-3-4-3M12 5a8 8 0 1 0 7.5 5"/></svg></button>
+    </div>
+    <div class="tools tools-right" aria-label="Board controls">
+      <button class="icon-button" id="undo-button" aria-label="Undo move" title="Undo move"><svg viewBox="0 0 24 24"><path d="m9 9-4-4 4-4M5 5h7a5 5 0 0 1 5 5v10"/></svg></button>
+      <button class="icon-button" id="hint-button" aria-label="Show hint" title="Show hint"><svg viewBox="0 0 24 24"><path d="M9 17h6M10 21h4M8 13a6 6 0 1 1 8 0c-1.5 1.2-1.5 2-1.5 3h-5c0-1 0-1.8-1.5-3Z"/></svg></button>
+      <div class="tool-group"><button class="icon-button" id="zoom-in" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M7 10h6M10 7v6"/></svg></button><button class="icon-button" id="zoom-out" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M7 10h6"/></svg></button></div>
+    </div>
+    <section class="companion" aria-label="Opponent">
+      <div class="speech" id="speech"><span id="mood">✦</span><span id="speech-text">Your move</span><span class="live-dot"></span></div>
+      <img id="companion-image" src="./assets/companion.png" alt="Silver-haired chess companion" onerror="this.hidden=true;document.getElementById('companion-fallback').hidden=false">
+      <span id="companion-fallback" hidden aria-hidden="true">♞</span>
+      <div class="nameplate"><span class="live-dot"></span><strong id="opponent-name">Jimmy</strong><span id="opponent-level">(Club)</span></div>
+    </section>
+    <div class="turn-pill" role="status" aria-live="polite"><span id="last-move">♙</span><span id="turn-status">1. White to move</span></div>
+    <div class="camera-tools"><button class="icon-button small" id="flip-button" title="Flip board" aria-label="Flip board"><svg viewBox="0 0 24 24"><path d="M4 8h15l-4-4M20 16H5l4 4M20 8l-5 4M4 16l5-4"/></svg></button><button class="icon-button small" id="view-button" title="Top view" aria-label="Switch to top view" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg></button><button class="icon-button small" id="sound-button" title="Sound on" aria-label="Enable sound" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4ZM16 8a6 6 0 0 1 0 8M19 4a11 11 0 0 1 0 16"/></svg></button></div>
+    <p class="orbit-help">Drag to rotate <span>·</span> Scroll to zoom</p>
+  </main>
+  <div id="menu-shade" hidden></div>
+  <aside id="menu" hidden aria-label="Game menu">
+    <header><div><span class="eyebrow">THE WOODEN TABLE</span><h1>3D Chess</h1></div><button class="plain-button" id="close-menu" aria-label="Close game menu">×</button></header>
+    <div class="menu-content">
+      <p class="section-label">PLAY YOUR WAY</p>
+      <div class="segmented"><button id="mode-ai" data-mode="ai" class="active">Computer</button><button id="mode-local" data-mode="local">With a friend</button></div>
+      <label class="field-label" for="difficulty">Computer difficulty</label>
+      <select id="difficulty"><option value="1">Casual · A relaxed game</option><option value="2" selected>Club · A little challenge</option><option value="3">Advanced · Think ahead</option></select>
+      <div class="game-info"><span id="player-info">You play as White</span><span>Untimed</span></div>
+      <button class="primary-button" id="new-game-menu">New game <span>↗</span></button>
+      <div class="section-heading"><h2>Moves</h2><button class="text-button" id="export-button" title="Download game as PGN">Export PGN ↗</button></div>
+      <div class="moves-header"><span>#</span><span>White</span><span>Black</span></div>
+      <div id="move-history" aria-label="Move history"><p class="empty-history">A fresh board. A world of possibilities.</p></div>
+      <form id="move-form"><label class="field-label" for="move-input">Play using notation</label><div class="input-row"><input id="move-input" placeholder="e4, Nf3, or e2e4" autocomplete="off" spellcheck="false" aria-describedby="move-feedback"><button type="submit" aria-label="Play entered move">→</button></div><span id="move-feedback" aria-live="polite"></span></form>
+      <details><summary>How to play</summary><p>Click a piece, then one of its highlighted legal squares. Protect your king and checkmate your opponent.</p><p>Drag the board to orbit. Scroll or use + / − to zoom. The lightbulb suggests a move. Undo takes back your last turn.</p><p>Castling, en passant, promotion, checkmate, and draws are supported. Games save automatically in this browser.</p></details>
+      <footer>Take your time. Make your move.</footer>
+    </div>
+  </aside>
+  <dialog id="new-game-dialog"><form method="dialog"><span class="eyebrow">A FRESH START</span><h2>Set the pieces again?</h2><p>Your current game will be replaced. You can export it from the menu before starting over.</p><div class="dialog-actions"><button value="cancel" class="secondary-button">Keep playing</button><button value="start" class="primary-button">New game</button></div></form></dialog>
+  <dialog id="promotion-dialog"><span class="eyebrow">PAWN PROMOTION</span><h2>A well-earned upgrade.</h2><p>Choose your new piece.</p><div class="promotion-options"><button data-promote="q" aria-label="Promote to queen">♛<span>Queen</span></button><button data-promote="r" aria-label="Promote to rook">♜<span>Rook</span></button><button data-promote="b" aria-label="Promote to bishop">♝<span>Bishop</span></button><button data-promote="n" aria-label="Promote to knight">♞<span>Knight</span></button></div></dialog>
+  <div id="toast" role="status" hidden></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

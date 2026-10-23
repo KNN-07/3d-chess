@@ -1,0 +1,9 @@
+node_modules/
+.openai/
+.env
+.env.*
+*.log
+*.tar.gz
+*.zip
+.DS_Store
+dist/standalone.html
