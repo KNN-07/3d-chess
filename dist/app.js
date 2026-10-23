@@ -1,8 +1,10 @@
 import { Chess } from './vendor/chess.js';
 import { ChessScene } from './scene.js';
+import { Companion } from './companion.js';
 
 const $=id=>document.getElementById(id);
 const game=new Chess();
+const companion=new Companion();
 const STORAGE='wooden-table-chess-v1';
 const names={p:'Pawn',n:'Knight',b:'Bishop',r:'Rook',q:'Queen',k:'King'};
 let mode='ai',level=2,selected=null,thinking=false,hinting=false,moving=false,visualGeneration=0,pendingPromotion=null,worker=null,job=0,sound=false,topView=false,engineFailed=false,nextMode=null,scene=null,audio=null;
@@ -27,6 +29,7 @@ function render(positionChanged=false){
   $('speech-text').textContent=moving?'Making a move':end?(game.isCheckmate()?'Good game!':'A well-played draw'):thinking?'Thinking':hinting?'Let me think…':game.isCheck()?'King in check!':selected?`${names[game.get(selected)?.type]||'Piece'} to move`:mode==='local'?`${turn} to move`:'Your move';
   $('mood').textContent=thinking||hinting?'✧':end?'✦':game.isCheck()?'!':'✦';
   $('speech').classList.toggle('thinking',thinking||hinting);
+  companion.react(end?'end':game.isCheck()?'check':moving?'move':thinking||hinting?'thinking':'idle');
   $('opponent-name').textContent=mode==='ai'?'Jimmy':'Two players';
   $('opponent-level').textContent=mode==='ai'?`(${['','Casual','Club','Advanced'][level]})`:'(Local)';
   $('player-info').textContent=mode==='ai'?'You play as White':'Pass-and-play on this device';

@@ -26,6 +26,7 @@
     <section class="companion" aria-label="Opponent">
       <div class="speech" id="speech"><span id="mood">✦</span><span id="speech-text">Your move</span><span class="live-dot"></span></div>
       <img id="companion-image" src="./assets/companion.png" alt="Silver-haired chess companion" onerror="this.hidden=true;document.getElementById('companion-fallback').hidden=false">
+      <div id="live2d-stage" hidden></div>
       <span id="companion-fallback" hidden aria-hidden="true">♞</span>
       <div class="nameplate"><span class="live-dot"></span><strong id="opponent-name">Jimmy</strong><span id="opponent-level">(Club)</span></div>
     </section>
@@ -43,6 +44,25 @@
       <select id="difficulty"><option value="1">Casual · A relaxed game</option><option value="2" selected>Club · A little challenge</option><option value="3">Advanced · Think ahead</option></select>
       <div class="game-info"><span id="player-info">You play as White</span><span>Untimed</span></div>
       <button class="primary-button" id="new-game-menu">New game <span>↗</span></button>
+      <details id="companion-settings">
+        <summary>Companion <span class="live2d-badge">Live2D</span></summary>
+        <p>Bring your own animated companion. Choose an exported Cubism 3 or 4 model folder, including its .model3.json, .moc3, and textures.</p>
+        <div class="companion-actions">
+          <button id="choose-core" class="secondary-button">Add Cubism Core</button>
+          <button id="choose-model" class="secondary-button">Import model folder</button>
+        </div>
+        <input id="core-file" type="file" accept=".js" hidden aria-label="Cubism Core runtime file">
+        <input id="model-folder" type="file" webkitdirectory multiple hidden aria-label="Live2D model folder">
+        <p id="core-status">One-time setup: add live2dcubismcore.min.js from the <a href="https://www.live2d.com/en/sdk/download/web/" target="_blank" rel="noopener noreferrer">official Cubism SDK</a>. Only use the official runtime.</p>
+        <p id="model-status" role="status" aria-live="polite">Original companion active. Imported files stay on this device.</p>
+        <div id="model-selector-row" hidden><label class="field-label" for="model-selector">Model in this folder</label><select id="model-selector"></select></div>
+        <div id="model-controls" hidden>
+          <label class="field-label" for="companion-size">Companion size</label><input id="companion-size" type="range" min="140" max="360" step="10" value="240">
+          <label class="field-label" for="companion-motion">Motion</label><div class="companion-control-row"><select id="companion-motion"></select><button id="play-motion" class="secondary-button">Play</button></div>
+          <label class="field-label" for="companion-expression">Expression</label><select id="companion-expression"></select>
+        </div>
+        <button id="reset-companion" class="text-button">Restore original companion</button>
+      </details>
       <div class="section-heading"><h2>Moves</h2><button class="text-button" id="export-button" title="Download game as PGN">Export PGN ↗</button></div>
       <div class="moves-header"><span>#</span><span>White</span><span>Black</span></div>
       <div id="move-history" aria-label="Move history"><p class="empty-history">A fresh board. A world of possibilities.</p></div>
